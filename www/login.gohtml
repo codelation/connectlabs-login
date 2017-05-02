@@ -1,0 +1,40 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>{{.Title}}</title>
+  <meta name="description" content="Login Page">
+  <meta name="author" content="Connectlabs WiFi">
+
+  <style>
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+</head>
+
+	<body>
+    <h1 class="siteName">{{.Title}}</h1>
+    <h2 class="subTitle">{{.SubTitle}}</h2>
+    {{ $siteName := .Name }}
+
+    <ul class="providers">
+      {{ range .Providers }}
+      <li class="provider">
+        {{ if eq . "facebook" }}
+        <a href="/auth/facebook/login">Facebook Login</a>
+        {{ else if eq . "twitter" }}
+        <a href="/auth/twitter/login">Twitter Login</a>
+        {{ else if eq . "gplus" }}
+        <a href="/auth/gplus/login">Google Login</a>
+        {{ else if eq . "email" }}
+        <form><input type="email" /></form>
+        {{ end }}
+      </li>
+      {{ end }}
+    </ul>
+</body></html>
