@@ -1,0 +1,5 @@
+#Ignore built executable
+./connectlabs-login
+
+#Ignore top level, local environment file
+./.env
