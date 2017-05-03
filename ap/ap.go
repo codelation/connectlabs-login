@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/pat"
 )
 
 //AP holds information about connecting with cloudtrax APs
@@ -20,16 +18,11 @@ type AP struct {
 
 //SessionStorage defines methods needed to privide session storage
 type SessionStorage interface {
-	FindSession(session *Session, sessionID string) error
-	UpdateSession(session Session, req *Request) error
+	FindSession(*Session, string) error
+	UpdateSession(Session, *Request) error
 }
 
-//AddRoutes adds the ap authorize route to the router
-func (ap *AP) AddRoutes(p *pat.Router) {
-	p.Get("/auth/auth.html", ap.handleAPRequest)
-}
-
-func (ap *AP) handleAPRequest(w http.ResponseWriter, r *http.Request) {
+func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 	log.Println("handling ap request")
 	err := r.ParseForm()
 	if err != nil {
@@ -45,7 +38,7 @@ func (ap *AP) handleAPRequest(w http.ResponseWriter, r *http.Request) {
 
 	request.ParseForm(r.Form)
 	if err = sessions.FindSession(session, request.Session); err != nil {
-
+		log.Printf("error finding session: %v", err.Error())
 	}
 
 	//Get the new response authorization
@@ -86,12 +79,12 @@ func (ap *AP) handleAPRequest(w http.ResponseWriter, r *http.Request) {
 			Download uint
 			Upload   uint
 		}{
-			Session:  session.Session,
+			Session:  session.Token,
 			Mac:      session.Device,
 			Download: session.Download,
 			Upload:   session.Upload,
 		})
-	log.Printf("Session: %s\n", j)
+	log.Printf("ap request handled. Session: %s\n", j)
 }
 
 //GenerateRA takes the response CODE, the (un-decoded) RA field, and the site secret,

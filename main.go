@@ -1,21 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
-	"net/http"
 	"os"
 	"strconv"
 
-	"github.com/gorilla/pat"
-	"github.com/markbates/goth"
-	"github.com/markbates/goth/providers/facebook"
-	"github.com/markbates/goth/providers/gplus"
-	"github.com/markbates/goth/providers/twitter"
 	"github.com/ryanhatfield/connectlabs-login/ap"
+	"github.com/ryanhatfield/connectlabs-login/app"
 	"github.com/ryanhatfield/connectlabs-login/sso"
 )
 
 func main() {
+
 	getEnv := func(key, def string) string {
 		//helper method for getting environment variables with defaults
 		if e := os.Getenv(key); e != "" {
@@ -24,37 +21,65 @@ func main() {
 		return def
 	}
 
-	maxDBCon, _ := strconv.ParseInt(getEnv("MAX_DATABASE_CONNECTIONS", "20"), 0, 32)
-
-	dat := &data{
-		DatabaseURL:      getEnv("DATABASE_URL", ""),
-		MaxDBConnections: int(maxDBCon),
+	getEnvInt := func(key string, def int) int {
+		e := getEnv(key, "0")
+		i, err := strconv.ParseInt(e, 0, 32)
+		if err != nil || i == 0 {
+			return def
+		}
+		return int(i)
 	}
 
-	if err := dat.InitializeDB(); err != nil {
-		log.Printf("error initializing db:\n%+v", err)
+	getEnvBool := func(key string, def bool) bool {
+		e := getEnv(key, "false")
+		i, err := strconv.ParseBool(e)
+		if err != nil {
+			return def
+		}
+		return i
 	}
 
-	router := pat.New()
-	sso := sso.SSO{
-		Users: dat,
+	debug := getEnvBool("CONNECTLABS_DEBUG", false)
+
+	//sso.UserStorage and ap.SessionStorage can be their own interfaces, but all
+	//are implemented in app.Data, so just cast it to the specific interface type
+	database := &app.Data{
+		DatabaseURL:      os.Getenv("DATABASE_URL"),
+		MaxDBConnections: getEnvInt("MAX_DATABASE_CONNECTIONS", 20),
+		Debug:            debug,
 	}
 
-	accessPoints := ap.AP{
-		Secret:   getEnv("SECRET", "default"),
-		Sessions: ap.SessionStorage(dat),
+	application := app.App{
+		AccessPointHandler: &ap.AP{
+			Secret:   getEnv("SECRET", "default"),
+			Sessions: database,
+		},
+		Database: database,
+		Debug:    debug,
+		Port:     getEnv("PORT", "8080"),
+		SingleSignOnHandler: &sso.SSO{
+			Users:          database,
+			KeyFacebook:    os.Getenv("FACEBOOK_KEY"),
+			SecretFacebook: os.Getenv("FACEBOOK_SECRET"),
+			KeyTwitter:     os.Getenv("TWITTER_KEY"),
+			SecretTwitter:  os.Getenv("TWITTER_SECRET"),
+			KeyGPlus:       os.Getenv("GPLUS_KEY"),
+			SecretGPlus:    os.Getenv("GPLUS_SECRET"),
+			CallbackURL:    os.Getenv("CALLBACK_URL"),
+		},
 	}
 
-	callbackURL := getEnv("CALLBACK_URL", "http://localhost:8080/auth/")
+	if application.Debug {
+		log.Println("Debug logging is enabled")
+		j, _ := json.MarshalIndent(os.Environ(), "", "  ")
+		log.Printf("Environment:\n%s", j)
 
-	goth.UseProviders(
-		facebook.New(os.Getenv("FACEBOOK_KEY"), os.Getenv("FACEBOOK_SECRET"), callbackURL+"facebook/callback"),
-		twitter.NewAuthenticate(os.Getenv("TWITTER_KEY"), os.Getenv("TWITTER_SECRET"), callbackURL+"twitter/callback"),
-		gplus.New(os.Getenv("GPLUS_KEY"), os.Getenv("GPLUS_SECRET"), callbackURL+"gplus/callback"),
-	)
+		j, _ = json.MarshalIndent(application, "", "  ")
+		log.Printf("Application:\n%s", j)
+	}
 
-	accessPoints.AddRoutes(router)
-	sso.AddRoutes(router)
-
-	log.Println(http.ListenAndServe(":"+getEnv("PORT", "8080"), router))
+	err := application.ListenAndServe()
+	if err != nil {
+		log.Println(err)
+	}
 }

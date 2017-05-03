@@ -1,4 +1,4 @@
-package util
+package oauth
 
 import (
 	"errors"
@@ -14,7 +14,8 @@ import (
 // SessionName is the key used to access the session store.
 const SessionName = "_login_session"
 
-// Store can/should be set by applications using gothic. The default is a cookie store.
+// Store can/should be set by applications using this adapter.
+// The default is a cookie store.
 var Store sessions.Store
 var defaultStore sessions.Store
 

@@ -7,62 +7,77 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/pat"
-	"github.com/ryanhatfield/connectlabs-login/sso/util"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/providers/facebook"
+	"github.com/markbates/goth/providers/gplus"
+	"github.com/markbates/goth/providers/twitter"
+	"github.com/ryanhatfield/connectlabs-login/sso/oauth"
 )
 
 type SSO struct {
-	Providers []Provider
-	Users     UserStorage
+	Users          UserStorage
+	KeyFacebook    string
+	SecretFacebook string
+	KeyGPlus       string
+	SecretGPlus    string
+	KeyTwitter     string
+	SecretTwitter  string
+	CallbackURL    string
+	initialized    bool
 }
 
 type SiteConfigStorage interface {
 	GetSiteConfig(site string) interface{}
 }
 
-func (sso *SSO) AddRoutes(p *pat.Router) {
-	p.Get("/auth/{provider}/callback", func(res http.ResponseWriter, req *http.Request) {
-
-		p := req.URL.Query().Get(":provider")
-		log.Printf("handling /auth/%s/callback\n", p)
-
-		user, err := util.CompleteUserAuth(res, req)
-		if err != nil {
-			fmt.Fprintln(res, err)
-			return
-		}
-		j, _ := json.MarshalIndent(user, "", "  ")
-		res.Write(j)
-	})
-
-	p.Get("/auth/logout/{provider}", func(res http.ResponseWriter, req *http.Request) {
-		util.Logout(res, req)
-		res.Header().Set("Location", "/")
-		res.WriteHeader(http.StatusTemporaryRedirect)
-	})
-
-	p.Get("/auth/{provider}/login", func(res http.ResponseWriter, req *http.Request) {
-		// try to get the user without re-authenticating
-		if gothUser, err := util.CompleteUserAuth(res, req); err == nil {
-			j, _ := json.MarshalIndent(gothUser, "", "  ")
-			res.Write(j)
-		} else {
-			util.BeginAuthHandler(res, req)
-		}
-	})
-
-	p.Get("/auth/login.html", sso.handleLoginPage)
-
+func (sso *SSO) Initialize() {
+	if sso.initialized {
+		return
+	}
+	goth.UseProviders(
+		facebook.New(sso.KeyFacebook, sso.SecretFacebook, sso.CallbackURL+"facebook/callback"),
+		twitter.NewAuthenticate(sso.KeyTwitter, sso.SecretTwitter, sso.CallbackURL+"twitter/callback"),
+		gplus.New(sso.KeyGPlus, sso.SecretGPlus, sso.CallbackURL+"gplus/callback"),
+	)
+	sso.initialized = true
 }
 
-func (sso *SSO) handleLoginPage(w http.ResponseWriter, r *http.Request) {
+func (sso *SSO) HandleAuthCallback(res http.ResponseWriter, req *http.Request) {
+
+	user, err := oauth.CompleteUserAuth(res, req)
+	if err != nil {
+		fmt.Fprintln(res, err)
+		return
+	}
+	j, _ := json.MarshalIndent(user, "", "  ")
+	res.Write(j)
+}
+
+func (sso *SSO) HandleAuthLogout(res http.ResponseWriter, req *http.Request) {
+	oauth.Logout(res, req)
+	res.Header().Set("Location", "/")
+	res.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func (sso *SSO) HandleAuthLogin(res http.ResponseWriter, req *http.Request) {
+	// try to get the user without re-authenticating
+	if gothUser, err := oauth.CompleteUserAuth(res, req); err == nil {
+		j, _ := json.MarshalIndent(gothUser, "", "  ")
+		res.Write(j)
+	} else {
+		oauth.BeginAuthHandler(res, req)
+	}
+}
+
+func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 
 	log.Println("handling login page")
+
 	t, err := template.ParseFiles("www/login.gohtml")
 	if err != nil {
 		log.Println(err)
 	}
-	t.Execute(w,
+	t.Execute(res,
 		SiteConfig{
 			Name:      "BeardFromFargo",
 			Title:     "Beard Wifi",
