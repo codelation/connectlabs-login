@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/gorilla/sessions"
 	"github.com/ryanhatfield/connectlabs-login/ap"
 	"github.com/ryanhatfield/connectlabs-login/app"
 	"github.com/ryanhatfield/connectlabs-login/sso"
@@ -54,9 +55,10 @@ func main() {
 			Secret:   getEnv("SECRET", "default"),
 			Sessions: database,
 		},
-		Database: database,
-		Debug:    debug,
-		Port:     getEnv("PORT", "8080"),
+		Database:     database,
+		Debug:        debug,
+		Port:         getEnv("PORT", "8080"),
+		SessionStore: sessions.NewCookieStore([]byte(getEnv("COOKIE_SECRET", "cookie-secret"))),
 		SingleSignOnHandler: &sso.SSO{
 			Users:          database,
 			KeyFacebook:    os.Getenv("FACEBOOK_KEY"),

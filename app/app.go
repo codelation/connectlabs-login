@@ -7,9 +7,12 @@ import (
 	"time"
 
 	"github.com/gorilla/pat"
+	"github.com/gorilla/sessions"
 	"github.com/ryanhatfield/connectlabs-login/ap"
 	"github.com/ryanhatfield/connectlabs-login/sso"
 )
+
+const SessionKey = "connectlabs-login"
 
 type App struct {
 	AccessPointHandler  *ap.AP
@@ -17,9 +20,9 @@ type App struct {
 	Debug               bool
 	Port                string
 	SingleSignOnHandler *sso.SSO
-
-	router      *pat.Router
-	initialized bool
+	router              *pat.Router
+	SessionStore        sessions.Store
+	initialized         bool
 }
 
 func (a *App) ListenAndServe() error {
@@ -29,8 +32,15 @@ func (a *App) ListenAndServe() error {
 
 func (a *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	log.Printf("Serving app request: %s\n", req.URL.String())
+
+	// cookieSession, err := a.SessionStore.Get(req, SessionKey)
+	// if err != nil {
+	// 	http.Error(res, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
 	s := time.Now()
-	sso.UserMiddleware(a.SingleSignOnHandler.Users, a.router)
+	a.router.ServeHTTP(res, req)
 	log.Printf("Finished serving app request: %s Request took %d nanoseconds", req.URL.String(), time.Now().Sub(s).Nanoseconds())
 }
 

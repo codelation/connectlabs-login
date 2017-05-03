@@ -59,11 +59,9 @@ func (d *Data) FindSession(session *ap.Session, sessionID string) error {
 	return nil
 }
 
-func (d *Data) UpdateSession(session ap.Session, req *ap.Request) error {
-
-	d.FindSession(&session, session.Token)
-
-	log.Printf("session: %+v\n", session)
+func (d *Data) UpdateSession(req *ap.Request) error {
+	session := &ap.Session{}
+	d.FindSession(session, req.Session)
 
 	session.IPv4 = req.IPV4Address
 	if req.RequestType == ap.RequestTypeAccounting {
@@ -78,6 +76,9 @@ func (d *Data) UpdateSession(session ap.Session, req *ap.Request) error {
 
 	if d.db.NewRecord(session) {
 		//session not found, save a new instance
+		session.Token = req.Session
+		session.Device = req.MacAddress
+		session.Node = req.NodeAddress
 		session.ExpiresAt = time.Now()
 		d.db.Save(&session)
 	} else {
@@ -92,7 +93,7 @@ func (d *Data) UpdateSession(session ap.Session, req *ap.Request) error {
 	return nil
 }
 
-func (d *Data) FindUser(user *sso.User, userID uint) error {
+func (d *Data) FindUserByID(user *sso.User, userID uint) error {
 
 	d.db.First(user, struct{ ID uint }{ID: userID})
 
@@ -102,7 +103,7 @@ func (d *Data) FindUser(user *sso.User, userID uint) error {
 func (d *Data) AddLoginToUser(userID uint, login sso.UserLogin) error {
 	user := &sso.User{}
 
-	d.FindUser(user, userID)
+	d.FindUserByID(user, userID)
 	d.db.Create(login)
 	//make sure it saved
 	if !d.db.NewRecord(login) {

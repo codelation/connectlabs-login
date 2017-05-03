@@ -19,7 +19,7 @@ type AP struct {
 //SessionStorage defines methods needed to privide session storage
 type SessionStorage interface {
 	FindSession(*Session, string) error
-	UpdateSession(Session, *Request) error
+	UpdateSession(*Request) error
 }
 
 func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,7 @@ func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 		response.Upload = 800
 	}
 
-	sessions.UpdateSession(*session, request)
+	sessions.UpdateSession(request)
 
 	err = response.Execute(&w)
 
