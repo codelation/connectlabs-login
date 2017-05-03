@@ -49,6 +49,7 @@ func (sso *SSO) HandleAuthCallback(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprintln(res, err)
 		return
 	}
+	dbUser := &User{}
 	j, _ := json.MarshalIndent(user, "", "  ")
 	res.Write(j)
 }

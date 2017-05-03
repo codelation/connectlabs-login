@@ -132,3 +132,19 @@ func (d *Data) FindUserID(session, ip, mac string) string {
 
 	return ""
 }
+
+func (d *Data) FindUserByDevice(user *sso.User, ip string, mac string) error {
+	u := &sso.User{}
+	s := &ap.Session{}
+
+	d.db.Where("ipv4 = ? AND device = ?", ip, mac).Order("expires_at desc").First(s)
+	if s != nil && !d.db.NewRecord(s) {
+		d.FindUserByID(u, s.UserID)
+		if !d.db.NewRecord(u) {
+			user = u
+			return nil
+		}
+		return fmt.Errorf("could not find user with user id: %d", s.UserID)
+	}
+	return fmt.Errorf("could not find user with ip: %s, mac: %s", ip, mac)
+}

@@ -9,6 +9,7 @@ import (
 type UserStorage interface {
 	FindUserByID(user *User, ID uint) error
 	AddLoginToUser(userID uint, login UserLogin) error
+	FindUserByDevice(user *User, ip string, mac string) error
 	FindUserID(session, ip, mac string) string
 }
 
