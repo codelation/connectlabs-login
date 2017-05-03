@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gorilla/pat"
-	"github.com/gorilla/sessions"
 	"github.com/ryanhatfield/connectlabs-login/ap"
 	"github.com/ryanhatfield/connectlabs-login/sso"
 )
@@ -21,7 +20,6 @@ type App struct {
 	Port                string
 	SingleSignOnHandler *sso.SSO
 	router              *pat.Router
-	SessionStore        sessions.Store
 	initialized         bool
 }
 
@@ -33,14 +31,30 @@ func (a *App) ListenAndServe() error {
 func (a *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	log.Printf("Serving app request: %s\n", req.URL.String())
 
-	// cookieSession, err := a.SessionStore.Get(req, SessionKey)
-	// if err != nil {
-	// 	http.Error(res, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	req.ParseForm()
+	node := req.Form.Get("called")
+	mac := req.Form.Get("mac")
+
+	session, err := a.Database.Store.Get(req, SessionKey)
+	if err != nil {
+		log.Printf("error getting session from store: %s\n", err.Error())
+	}
+
+	log.Printf("session: %+v\n", session)
+	if node != "" {
+		session.Values["node"] = node
+	}
+	if mac != "" {
+		session.Values["mac"] = mac
+	}
+	err = session.Save(req, res)
+	if err != nil {
+		log.Printf("error saving session: %s\n", err.Error())
+	}
 
 	s := time.Now()
 	a.router.ServeHTTP(res, req)
+
 	log.Printf("Finished serving app request: %s Request took %d nanoseconds", req.URL.String(), time.Now().Sub(s).Nanoseconds())
 }
 

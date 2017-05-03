@@ -2,7 +2,6 @@ package sso
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 
 type SSO struct {
 	Users          UserStorage
+	SessionStore   string
 	KeyFacebook    string
 	SecretFacebook string
 	KeyGPlus       string
@@ -25,6 +25,8 @@ type SSO struct {
 	CallbackURL    string
 	initialized    bool
 }
+
+const SessionKey = "connectlabs-login"
 
 type SiteConfigStorage interface {
 	GetSiteConfig(site string) interface{}
@@ -43,15 +45,36 @@ func (sso *SSO) Initialize() {
 }
 
 func (sso *SSO) HandleAuthCallback(res http.ResponseWriter, req *http.Request) {
+	log.Println("starting auth callback")
+	store := sso.Users.SessionStore()
+
+	session, sessionerr := store.Get(req, SessionKey)
+	if sessionerr != nil {
+		log.Printf("error getting session store: %s", sessionerr.Error())
+	}
 
 	user, err := oauth.CompleteUserAuth(res, req)
 	if err != nil {
-		fmt.Fprintln(res, err)
+		log.Printf("error getting user from oauth provider: %s", err.Error())
 		return
 	}
+
 	dbUser := &User{}
+
+	sessionNode, _ := session.Values["node"].(string)
+	sessionMac, _ := session.Values["mac"].(string)
+
+	if err = sso.Users.FindUserByDevice(dbUser, sessionMac, sessionNode); err != nil {
+		log.Printf("error getting user by device mac / node: %s\n", err.Error())
+	} else {
+		userjs, _ := json.MarshalIndent(dbUser, "", "  ")
+		res.Write(userjs)
+	}
+
 	j, _ := json.MarshalIndent(user, "", "  ")
 	res.Write(j)
+
+	log.Println("finished auth callback")
 }
 
 func (sso *SSO) HandleAuthLogout(res http.ResponseWriter, req *http.Request) {

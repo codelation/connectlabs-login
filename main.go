@@ -48,6 +48,7 @@ func main() {
 		DatabaseURL:      os.Getenv("DATABASE_URL"),
 		MaxDBConnections: getEnvInt("MAX_DATABASE_CONNECTIONS", 20),
 		Debug:            debug,
+		Store:            sessions.NewCookieStore([]byte(getEnv("COOKIE_SECRET", "cookie-secret"))),
 	}
 
 	application := app.App{
@@ -55,10 +56,9 @@ func main() {
 			Secret:   getEnv("SECRET", "default"),
 			Sessions: database,
 		},
-		Database:     database,
-		Debug:        debug,
-		Port:         getEnv("PORT", "8080"),
-		SessionStore: sessions.NewCookieStore([]byte(getEnv("COOKIE_SECRET", "cookie-secret"))),
+		Database: database,
+		Debug:    debug,
+		Port:     getEnv("PORT", "8080"),
 		SingleSignOnHandler: &sso.SSO{
 			Users:          database,
 			KeyFacebook:    os.Getenv("FACEBOOK_KEY"),

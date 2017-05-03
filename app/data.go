@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/sessions"
 	"github.com/jinzhu/gorm"
 	//This is required for the postgres driver within gorm
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -18,7 +19,9 @@ type Data struct {
 	DatabaseURL      string
 	Debug            bool
 	MaxDBConnections int
-	db               *gorm.DB
+	Store            sessions.Store
+
+	db *gorm.DB
 }
 
 func (d *Data) InitializeDB() error {
@@ -133,18 +136,51 @@ func (d *Data) FindUserID(session, ip, mac string) string {
 	return ""
 }
 
-func (d *Data) FindUserByDevice(user *sso.User, ip string, mac string) error {
+func (d *Data) FindUserByDevice(user *sso.User, mac string, node string) error {
 	u := &sso.User{}
 	s := &ap.Session{}
 
-	d.db.Where("ipv4 = ? AND device = ?", ip, mac).Order("expires_at desc").First(s)
-	if s != nil && !d.db.NewRecord(s) {
-		d.FindUserByID(u, s.UserID)
-		if !d.db.NewRecord(u) {
-			user = u
-			return nil
-		}
-		return fmt.Errorf("could not find user with user id: %d", s.UserID)
+	d.db.Where("node = ? AND device = ?", node, mac).Order("expires_at desc").First(s)
+	if s == nil {
+		return fmt.Errorf("could not find user with mac: %s, node: %s", mac, node)
 	}
-	return fmt.Errorf("could not find user with ip: %s, mac: %s", ip, mac)
+	if !d.db.NewRecord(s) {
+		d.FindUserByID(u, s.UserID)
+		if d.db.NewRecord(u) {
+			u = &sso.User{
+				Sessions: []ap.Session{*s},
+			}
+			d.db.Create(u)
+		}
+
+		if d.db.NewRecord(u) {
+			//if it's still a new record, we have an issue
+			return fmt.Errorf("could not save user to db, user: %+v", *u)
+		}
+
+		d.db.Model(s).UpdateColumn("user_id", u.ID)
+		user = u
+	}
+
+	return nil
+}
+
+func (d *Data) AddSessionToUser(token string, userID uint) error {
+	s := &ap.Session{}
+	u := &sso.User{}
+
+	if err := d.FindSession(s, token); err != nil || d.db.NewRecord(s) {
+		return fmt.Errorf("error finding session by token: %s", err.Error())
+	}
+
+	if err := d.FindUserByID(u, userID); err != nil || d.db.NewRecord(u) {
+		return fmt.Errorf("error finding user by id: %s", err.Error())
+	}
+
+	d.db.Model(s).UpdateColumn("user_id", userID)
+	return nil
+}
+
+func (d *Data) SessionStore() sessions.Store {
+	return d.Store
 }

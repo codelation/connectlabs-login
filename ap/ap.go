@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/sessions"
 )
 
 //AP holds information about connecting with cloudtrax APs
@@ -20,6 +22,7 @@ type AP struct {
 type SessionStorage interface {
 	FindSession(*Session, string) error
 	UpdateSession(*Request) error
+	SessionStore() sessions.Store
 }
 
 func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
