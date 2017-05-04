@@ -105,6 +105,19 @@ func (sso *SSO) HandleAuthLogin(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (sso *SSO) HandleEmailLogin(res http.ResponseWriter, req *http.Request) {
+	//TODO: log user in here
+	// node, _ := oauth.GetFromSession("node", req)
+	// mac, _ := oauth.GetFromSession("mac", req)
+	//
+	// if node == "" || mac == "" {
+	// }
+
+	userurl, _ := oauth.GetFromSession("userurl", req)
+	res.Header().Set("Location", userurl)
+	res.WriteHeader(http.StatusTemporaryRedirect)
+}
+
 func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 	//get variables from URL and save in session
 	req.ParseForm()
@@ -142,6 +155,12 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 		config = &sso.Sites[0]
 	}
 
+	dbUser := &User{}
+
+	if err = sso.Users.FindUserByDevice(mac, node, dbUser); err != nil {
+		log.Printf("error getting user by device mac / node: %s\n", err.Error())
+	}
+
 	view := &LoginView{
 		Title:            config.Title,
 		SubTitle:         config.SubTitle,
@@ -149,16 +168,26 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 		TwitterProvider:  true,
 		FacebookProvider: true,
 		GPlusProvider:    true,
+		Email:            dbUser.Email,
 	}
 
 	if user, err := oauth.CompleteUserAuth(res, req, "facebook"); err == nil {
 		view.FacebookUser = user
-	}
-	if user, err := oauth.CompleteUserAuth(res, req, "twitter"); err == nil {
-		view.TwitterUser = user
+		if view.Email == "" {
+			view.Email = user.Email
+		}
 	}
 	if user, err := oauth.CompleteUserAuth(res, req, "gplus"); err == nil {
 		view.GPlusUser = user
+		if view.Email == "" {
+			view.Email = user.Email
+		}
+	}
+	if user, err := oauth.CompleteUserAuth(res, req, "twitter"); err == nil {
+		view.TwitterUser = user
+		if view.Email == "" {
+			view.Email = user.Email
+		}
 	}
 
 	t.Execute(res, *view)

@@ -53,7 +53,7 @@
       </li>
       {{ end }}
       <li class="provider">
-        <form><label for="email">Email</label><input id="email" type="email" /></form>
+        <form action="/auth/login" type="GET"><label for="email">Email</label><input name="email" type="email" value="{{ .Email }}"/><button type="submit">Submit</button></form>
       </li>
     </ul>
 

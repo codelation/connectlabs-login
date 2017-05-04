@@ -12,4 +12,5 @@ type LoginView struct {
 	SSID             string
 	Title            string
 	SubTitle         string
+	Email            string
 }
