@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/facebook"
@@ -15,7 +16,7 @@ import (
 
 type SSO struct {
 	Users          UserStorage
-	SessionStore   string
+	Sites          []SiteConfig
 	KeyFacebook    string
 	SecretFacebook string
 	KeyGPlus       string
@@ -46,14 +47,8 @@ func (sso *SSO) Initialize() {
 
 func (sso *SSO) HandleAuthCallback(res http.ResponseWriter, req *http.Request) {
 	log.Println("starting auth callback")
-	store := sso.Users.SessionStore()
 
-	session, sessionerr := store.Get(req, SessionKey)
-	if sessionerr != nil {
-		log.Printf("error getting session store: %s", sessionerr.Error())
-	}
-
-	user, err := oauth.CompleteUserAuth(res, req)
+	user, err := oauth.CompleteUserAuth(res, req, "")
 	if err != nil {
 		log.Printf("error getting user from oauth provider: %s", err.Error())
 		return
@@ -61,31 +56,48 @@ func (sso *SSO) HandleAuthCallback(res http.ResponseWriter, req *http.Request) {
 
 	dbUser := &User{}
 
-	sessionNode, _ := session.Values["node"].(string)
-	sessionMac, _ := session.Values["mac"].(string)
+	sessionNode, _ := oauth.GetFromSession("node", req)
+	sessionMac, _ := oauth.GetFromSession("mac", req)
 
-	if err = sso.Users.FindUserByDevice(dbUser, sessionMac, sessionNode); err != nil {
+	if err = sso.Users.FindUserByDevice(sessionMac, sessionNode, dbUser); err != nil {
 		log.Printf("error getting user by device mac / node: %s\n", err.Error())
-	} else {
-		userjs, _ := json.MarshalIndent(dbUser, "", "  ")
-		res.Write(userjs)
 	}
 
-	j, _ := json.MarshalIndent(user, "", "  ")
-	res.Write(j)
+	if err = sso.Users.AddLoginToUser(dbUser.ID, UserLogin{
+		AccessToken:       user.AccessToken,
+		AccessTokenSecret: user.AccessTokenSecret,
+		AvatarURL:         user.AvatarURL,
+		Description:       user.Description,
+		Email:             user.Email,
+		ExpiresAt:         user.ExpiresAt,
+		FirstName:         user.FirstName,
+		LastName:          user.LastName,
+		Location:          user.Location,
+		Name:              user.Name,
+		NickName:          user.NickName,
+		Provider:          user.Provider,
+		RefreshToken:      user.RefreshToken,
+	}); err != nil {
+		log.Printf("error getting user by device mac / node: %s\n", err.Error())
+	}
+
+	userurl, _ := oauth.GetFromSession("userurl", req)
+	res.Header().Set("Location", userurl)
+	res.WriteHeader(http.StatusTemporaryRedirect)
 
 	log.Println("finished auth callback")
 }
 
 func (sso *SSO) HandleAuthLogout(res http.ResponseWriter, req *http.Request) {
 	oauth.Logout(res, req)
-	res.Header().Set("Location", "/")
+	userurl, _ := oauth.GetFromSession("userurl", req)
+	res.Header().Set("Location", userurl)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 func (sso *SSO) HandleAuthLogin(res http.ResponseWriter, req *http.Request) {
 	// try to get the user without re-authenticating
-	if gothUser, err := oauth.CompleteUserAuth(res, req); err == nil {
+	if gothUser, err := oauth.CompleteUserAuth(res, req, ""); err == nil {
 		j, _ := json.MarshalIndent(gothUser, "", "  ")
 		res.Write(j)
 	} else {
@@ -94,6 +106,17 @@ func (sso *SSO) HandleAuthLogin(res http.ResponseWriter, req *http.Request) {
 }
 
 func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
+	//get variables from URL and save in session
+	req.ParseForm()
+	node := strings.Replace(req.Form.Get("called"), "-", ":", -1)
+	mac := strings.Replace(req.Form.Get("mac"), "-", ":", -1)
+	ssid := req.Form.Get("ssid")
+	userurl := req.Form.Get("userurl")
+
+	oauth.StoreInSession("node", node, req, res)
+	oauth.StoreInSession("mac", mac, req, res)
+	oauth.StoreInSession("ssid", ssid, req, res)
+	oauth.StoreInSession("userurl", userurl, req, res)
 
 	log.Println("handling login page")
 
@@ -101,11 +124,39 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	t.Execute(res,
-		SiteConfig{
-			Name:      "BeardFromFargo",
-			Title:     "Beard Wifi",
-			SubTitle:  "Log In for Specials",
-			Providers: []string{"facebook", "gplus", "twitter", "email"},
-		})
+
+	getConf := func(ssid string) *SiteConfig {
+		for _, c := range sso.Sites {
+			if c.Name == ssid {
+				return &c
+			}
+		}
+		return nil
+	}
+
+	config := getConf(ssid)
+	if config == nil {
+		config = getConf("Default")
+	}
+	if config == nil {
+		config = &sso.Sites[0]
+	}
+
+	view := &LoginView{
+		TwitterProvider:  true,
+		FacebookProvider: true,
+		GPlusProvider:    true,
+	}
+
+	if user, err := oauth.CompleteUserAuth(res, req, "facebook"); err == nil {
+		view.FacebookUser = user
+	}
+	if user, err := oauth.CompleteUserAuth(res, req, "twitter"); err == nil {
+		view.TwitterUser = user
+	}
+	if user, err := oauth.CompleteUserAuth(res, req, "gplus"); err == nil {
+		view.GPlusUser = user
+	}
+
+	t.Execute(res, *view)
 }

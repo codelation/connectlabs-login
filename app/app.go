@@ -8,14 +8,17 @@ import (
 
 	"github.com/gorilla/pat"
 	"github.com/ryanhatfield/connectlabs-login/ap"
+	"github.com/ryanhatfield/connectlabs-login/server"
 	"github.com/ryanhatfield/connectlabs-login/sso"
 )
 
+//SessionKey is used as the cookie storage name
 const SessionKey = "connectlabs-login"
 
+//App holds all the applicatin logic, and the entry point for the server
 type App struct {
 	AccessPointHandler  *ap.AP
-	Database            *Data
+	Database            *server.Data
 	Debug               bool
 	Port                string
 	SingleSignOnHandler *sso.SSO
@@ -23,6 +26,7 @@ type App struct {
 	initialized         bool
 }
 
+//ListenAndServe initializes the server and calls ServeHTTP
 func (a *App) ListenAndServe() error {
 	a.Initialize()
 	return http.ListenAndServe(":"+a.Port, a)
@@ -31,33 +35,14 @@ func (a *App) ListenAndServe() error {
 func (a *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	log.Printf("Serving app request: %s\n", req.URL.String())
 
-	req.ParseForm()
-	node := req.Form.Get("called")
-	mac := req.Form.Get("mac")
-
-	session, err := a.Database.Store.Get(req, SessionKey)
-	if err != nil {
-		log.Printf("error getting session from store: %s\n", err.Error())
-	}
-
-	log.Printf("session: %+v\n", session)
-	if node != "" {
-		session.Values["node"] = node
-	}
-	if mac != "" {
-		session.Values["mac"] = mac
-	}
-	err = session.Save(req, res)
-	if err != nil {
-		log.Printf("error saving session: %s\n", err.Error())
-	}
-
 	s := time.Now()
+
 	a.router.ServeHTTP(res, req)
 
 	log.Printf("Finished serving app request: %s Request took %d nanoseconds", req.URL.String(), time.Now().Sub(s).Nanoseconds())
 }
 
+//Initialize sets required settings and dependencies
 func (a *App) Initialize() error {
 	if a.initialized {
 		return nil

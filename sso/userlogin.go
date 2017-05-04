@@ -27,5 +27,17 @@ type UserLogin struct {
 }
 
 func (ul *UserLogin) Parse(user *goth.User) {
-	//TODO: write parse code to save user
+	ul.AccessToken = user.AccessToken
+	ul.AccessTokenSecret = user.AccessTokenSecret
+	ul.AvatarURL = user.AvatarURL
+	ul.Description = user.Description
+	ul.Email = user.Email
+	ul.ExpiresAt = user.ExpiresAt
+	ul.FirstName = user.FirstName
+	ul.LastName = user.LastName
+	ul.Location = user.Location
+	ul.Name = user.Name
+	ul.NickName = user.NickName
+	ul.Provider = user.Provider
+	ul.RefreshToken = user.RefreshToken
 }

@@ -123,15 +123,18 @@ as either "provider" or ":provider".
 
 See https://github.com/markbates/goth/examples/main.go to see this in action.
 */
-var CompleteUserAuth = func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+var CompleteUserAuth = func(res http.ResponseWriter, req *http.Request, providerName string) (goth.User, error) {
 
 	if !keySet && defaultStore == Store {
-		fmt.Println("goth/gothic: no SESSION_SECRET environment variable is set. The default cookie store is not available and any calls will fail. Ignore this warning if you are using a different store.")
+		fmt.Println("no SESSION_SECRET environment variable is set. The default cookie store is not available and any calls will fail. Ignore this warning if you are using a different store.")
 	}
 
-	providerName, err := GetProviderName(req)
-	if err != nil {
-		return goth.User{}, err
+	if providerName == "" {
+		p, err := GetProviderName(req)
+		if err != nil {
+			return goth.User{}, err
+		}
+		providerName = p
 	}
 
 	provider, err := goth.GetProvider(providerName)

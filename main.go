@@ -6,9 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/gorilla/sessions"
 	"github.com/ryanhatfield/connectlabs-login/ap"
 	"github.com/ryanhatfield/connectlabs-login/app"
+	"github.com/ryanhatfield/connectlabs-login/server"
 	"github.com/ryanhatfield/connectlabs-login/sso"
 )
 
@@ -44,11 +44,11 @@ func main() {
 
 	//sso.UserStorage and ap.SessionStorage can be their own interfaces, but all
 	//are implemented in app.Data, so just cast it to the specific interface type
-	database := &app.Data{
+	database := &server.Data{
 		DatabaseURL:      os.Getenv("DATABASE_URL"),
-		MaxDBConnections: getEnvInt("MAX_DATABASE_CONNECTIONS", 20),
 		Debug:            debug,
-		Store:            sessions.NewCookieStore([]byte(getEnv("COOKIE_SECRET", "cookie-secret"))),
+		MaxDBConnections: getEnvInt("MAX_DATABASE_CONNECTIONS", 20),
+		// Store:            sessions.NewCookieStore([]byte(getEnv("COOKIE_SECRET", "cookie-secret"))),
 	}
 
 	application := app.App{
@@ -60,7 +60,21 @@ func main() {
 		Debug:    debug,
 		Port:     getEnv("PORT", "8080"),
 		SingleSignOnHandler: &sso.SSO{
-			Users:          database,
+			Users: database,
+			Sites: []sso.SiteConfig{
+				sso.SiteConfig{
+					Name:      "Default",
+					Title:     "Connect Labs WiFi",
+					SubTitle:  "Log In for Specials",
+					Providers: []string{"email"},
+				},
+				sso.SiteConfig{
+					Name:      "BeardFromFargo Guest",
+					Title:     "Beard Wifi",
+					SubTitle:  "Log In for Specials",
+					Providers: []string{"facebook", "gplus", "twitter", "email"},
+				},
+			},
 			KeyFacebook:    os.Getenv("FACEBOOK_KEY"),
 			SecretFacebook: os.Getenv("FACEBOOK_SECRET"),
 			KeyTwitter:     os.Getenv("TWITTER_KEY"),

@@ -1,21 +1,19 @@
 package sso
 
 import (
-	"github.com/gorilla/sessions"
 	"github.com/jinzhu/gorm"
 	"github.com/ryanhatfield/connectlabs-login/ap"
 )
 
 //UserStorage provides an interface for the data adapter to implement user srorage
 type UserStorage interface {
-	FindUserByID(user *User, ID uint) error
-	AddLoginToUser(userID uint, login UserLogin) error
-	FindUserByDevice(user *User, mac string, node string) error
-	FindUserID(session, ip, mac string) string
-	SessionStore() sessions.Store
-	AddSessionToUser(token string, userID uint) error
+	FindUserByID(id uint, out *User) error
+	FindUserByDevice(mac string, node string, out *User) error
+	FindUserIDByDevice(token, mac, node string) string
+	AddLoginToUser(id uint, login UserLogin) error
 }
 
+//User holds information about a single wifi user
 type User struct {
 	gorm.Model
 	NickName string

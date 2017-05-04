@@ -8,21 +8,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/sessions"
 )
 
 //AP holds information about connecting with cloudtrax APs
 type AP struct {
 	Secret   string
 	Sessions SessionStorage
-}
-
-//SessionStorage defines methods needed to privide session storage
-type SessionStorage interface {
-	FindSession(*Session, string) error
-	UpdateSession(*Request) error
-	SessionStore() sessions.Store
 }
 
 func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +31,7 @@ func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 	sessions := ap.Sessions
 
 	request.ParseForm(r.Form)
-	if err = sessions.FindSession(session, request.Session); err != nil {
+	if err = sessions.FindSessionByToken(request.Session, session); err != nil {
 		log.Printf("error finding session: %v", err.Error())
 	}
 
@@ -67,7 +58,7 @@ func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 		response.Upload = 800
 	}
 
-	sessions.UpdateSession(request)
+	sessions.UpdateSessionFromRequest(request)
 
 	err = response.Execute(&w)
 

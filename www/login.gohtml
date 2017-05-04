@@ -20,21 +20,43 @@
 	<body>
     <h1 class="siteName">{{.Title}}</h1>
     <h2 class="subTitle">{{.SubTitle}}</h2>
-    {{ $siteName := .Name }}
 
     <ul class="providers">
-      {{ range .Providers }}
+      {{ if .FacebookProvider }}
       <li class="provider">
-        {{ if eq . "facebook" }}
+        {{ if eq .FacebookUser.Provider "facebook" }}
+        <div class="hello">Hello {{ .FacebookUser.Name }}!</div>
+        <a href="/auth/logout/facebook">Logout</a>
+        {{ else }}
         <a href="/auth/facebook/login">Facebook Login</a>
-        {{ else if eq . "twitter" }}
-        <a href="/auth/twitter/login">Twitter Login</a>
-        {{ else if eq . "gplus" }}
-        <a href="/auth/gplus/login">Google Login</a>
-        {{ else if eq . "email" }}
-        <form><input type="email" /></form>
         {{ end }}
       </li>
       {{ end }}
+      {{ if .TwitterProvider }}
+      <li class="provider">
+        {{ if eq .TwitterUser.Provider "twitter" }}
+        <div class="hello">Hello {{ .TwitterUser.Name }}!</div>
+        <a href="/auth/logout/twitter">Logout</a>
+        {{ else }}
+        <a href="/auth/twitter/login">Twitter Login</a>
+        {{ end }}
+      </li>
+      {{ end }}
+      {{ if .GPlusProvider }}
+      <li class="provider">
+        {{ if eq .GPlusUser.Provider "gplus" }}
+        <div class="hello">Hello {{ .GPlusUser.Name }}!</div>
+        <a href="/auth/logout/gplus">Logout</a>
+        {{ else }}
+        <a href="/auth/gplus/login">Facebook Login</a>
+        {{ end }}
+      </li>
+      {{ end }}
+      <li class="provider">
+        <form><input type="email" /></form>
+      </li>
     </ul>
+
+    <div class="info">
+    </div>
 </body></html>
