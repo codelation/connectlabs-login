@@ -177,5 +177,9 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	//nice for debugging
+	// m, _ := json.MarshalIndent(*view, "", "  ")
+	// view.Message = string(m)
+
 	t.Execute(res, *view)
 }
