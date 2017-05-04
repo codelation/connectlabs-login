@@ -105,19 +105,6 @@ func (sso *SSO) HandleAuthLogin(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (sso *SSO) HandleEmailLogin(res http.ResponseWriter, req *http.Request) {
-	//TODO: log user in here
-	// node, _ := oauth.GetFromSession("node", req)
-	// mac, _ := oauth.GetFromSession("mac", req)
-	//
-	// if node == "" || mac == "" {
-	// }
-
-	userurl, _ := oauth.GetFromSession("userurl", req)
-	res.Header().Set("Location", userurl)
-	res.WriteHeader(http.StatusTemporaryRedirect)
-}
-
 func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 	//get variables from URL and save in session
 	req.ParseForm()

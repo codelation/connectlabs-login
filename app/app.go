@@ -65,7 +65,6 @@ func (a *App) Initialize() error {
 }
 
 func (a *App) setRoutes() {
-	a.router.Get("/auth/login", a.SingleSignOnHandler.HandleEmailLogin)
 	a.router.Get("/auth/{provider}/callback", a.SingleSignOnHandler.HandleAuthCallback)
 	a.router.Get("/auth/logout/{provider}", a.SingleSignOnHandler.HandleAuthLogout)
 	a.router.Get("/auth/{provider}/login", a.SingleSignOnHandler.HandleAuthLogin)
