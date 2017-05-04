@@ -154,6 +154,10 @@ func (d *Data) FindUserByID(id uint, out *sso.User) error {
 func (d *Data) FindUserByDevice(mac string, node string, out *sso.User) error {
 	s := &ap.Session{}
 
+	if mac == "" || node == "" {
+		return fmt.Errorf("both mac and node are required, mac: %s, node: %s", mac, node)
+	}
+
 	d.db.Where("node = ? AND device = ?", node, mac).Order("expires_at desc").First(s)
 	if d.db.NewRecord(s) {
 		return fmt.Errorf("could not find user with mac: %s, node: %s", mac, node)
