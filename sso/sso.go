@@ -143,6 +143,9 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 	}
 
 	view := &LoginView{
+		Title:            config.Title,
+		SubTitle:         config.SubTitle,
+		SSID:             config.Name,
 		TwitterProvider:  true,
 		FacebookProvider: true,
 		GPlusProvider:    true,
