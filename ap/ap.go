@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -66,19 +65,7 @@ func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error while handling Accounting Request response: %s\n", err.Error())
 	}
 
-	j, _ := json.Marshal(
-		struct {
-			Session  string
-			Mac      string
-			Download uint
-			Upload   uint
-		}{
-			Session:  session.Token,
-			Mac:      session.Device,
-			Download: session.Download,
-			Upload:   session.Upload,
-		})
-	log.Printf("ap request handled. Session: %s\n", j)
+	log.Println("ap request handled.")
 }
 
 //GenerateRA takes the response CODE, the (un-decoded) RA field, and the site secret,
