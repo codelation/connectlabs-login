@@ -191,19 +191,21 @@ func (d *Data) AddLoginToUser(userID uint, login sso.UserLogin) error {
 
 	d.db.Model(user).Association("Logins").Find(&user.Logins)
 
+	updated := false
 	for _, j := range user.Logins {
 		if j.Provider == login.Provider {
-			d.db.Model(user).Association("Logins").Replace(sso.UserLogin{Provider: login.Provider}, login)
+			d.db.Model(&j).Updates(login)
+			updated = true
 		}
 	}
 
-	if d.db.NewRecord(login) {
+	if !updated {
 		d.db.Model(user).Association("Logins").Append(login)
-	}
 
-	//make sure it saved
-	if d.db.NewRecord(login) {
-		return errors.New("error associating login with user")
+		//make sure it saved
+		if d.db.NewRecord(login) {
+			return errors.New("error associating login with user")
+		}
 	}
 
 	return nil
