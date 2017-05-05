@@ -104,6 +104,8 @@
         <div>
           <form action="{{ .UserAccountManagementURL }}" type="GET">
             <input type="hidden" name="mac" value="{{ .MacAddress }}" />
+            <input type="hidden" name="session" value="{{ .UserAccountManagementSession }}" />
+            <input type="hidden" name="ip" value="{{ .UserAccountManagementIP }}" />
             <label for="email">Email</label>
             <input name="email" type="email" value="{{ .Email }}"/>
             <button type="submit">Submit</button>

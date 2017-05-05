@@ -115,6 +115,7 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 	userurl := req.Form.Get("userurl")
 	uamip := req.Form.Get("uamip")
 	uamport := "8085"
+	sessionToken := "default"
 
 	oauth.StoreInSession("node", node, req, res)
 	oauth.StoreInSession("mac", mac, req, res)
@@ -161,8 +162,10 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 		FacebookProvider: true,
 		GPlusProvider:    true,
 		Email:            dbUser.Email,
-		UserAccountManagementURL: fmt.Sprintf("http://%s:%s/cgi-bin/submit.cgi", uamip, uamport),
-		MacAddress:               mac,
+		UserAccountManagementURL:     fmt.Sprintf("http://%s:%s/cgi-bin/submit.cgi", uamip, uamport),
+		UserAccountManagementIP:      uamip,
+		UserAccountManagementSession: sessionToken,
+		MacAddress:                   mac,
 	}
 
 	if user, err := oauth.CompleteUserAuth(res, req, "facebook"); err == nil {
