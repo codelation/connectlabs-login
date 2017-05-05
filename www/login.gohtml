@@ -7,11 +7,53 @@
   <title>{{.Title}}</title>
   <meta name="description" content="Login Page">
   <meta name="author" content="Connectlabs WiFi">
-
-  <style>
-
-  </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+
+  <style type="text/css">
+  body {
+    width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  h1, h2 {
+    text-align: center;
+  }
+
+  .providers {
+    width: 100%;
+  }
+
+  .provider {
+    margin-bottom: 5px;
+    border-radius: 5px;
+    width: 480px;
+  }
+
+  .provider div {
+    color: white;
+    padding: 10px;
+    padding-left: 50px;
+    display: block;
+    text-decoration: none;
+  }
+
+  .provider-facebook {
+    background-color: #3b5998;
+  }
+
+  .provider-twitter {
+    background-color: #0084b4;
+  }
+
+  .provider-gplus {
+    background-color: #d34836;
+  }
+
+  .provider-email {
+    background-color: gray;
+  }
+  </style>
   <!--[if lt IE 9]>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
   <![endif]-->
@@ -21,41 +63,49 @@
     <h1 class="siteName">{{.Title}}</h1>
     <h2 class="subTitle">{{.SubTitle}}</h2>
 
-    <ul class="providers">
+    <div class="providers">
       {{ if .FacebookProvider }}
-      <li class="provider">
-        {{ if eq .FacebookUser.Provider "facebook" }}
-        <div class="hello">Hello {{ .FacebookUser.Name }}!</div>
-        <a href="/auth/logout/facebook">Logout</a>
-        {{ else }}
-        <a href="/auth/facebook/login">Facebook Login</a>
-        {{ end }}
-      </li>
+      <div class="provider provider-facebook">
+        <div>
+          {{ if eq .FacebookUser.Provider "facebook" }}
+          <div class="button">Hello {{ .FacebookUser.Name }}!</div>
+          <a href="/auth/logout/facebook">Logout</a>
+          {{ else }}
+          <a href="/auth/facebook/login">Facebook Login</a>
+          {{ end }}
+        </div>
+      </div>
       {{ end }}
       {{ if .TwitterProvider }}
-      <li class="provider">
-        {{ if eq .TwitterUser.Provider "twitter" }}
-        <div class="hello">Hello {{ .TwitterUser.Name }}!</div>
-        <a href="/auth/logout/twitter">Logout</a>
-        {{ else }}
-        <a href="/auth/twitter/login">Twitter Login</a>
-        {{ end }}
-      </li>
+      <div class="provider provider-twitter">
+        <div>
+          {{ if eq .TwitterUser.Provider "twitter" }}
+          <div class="hello">Hello {{ .TwitterUser.Name }}!</div>
+          <a href="/auth/logout/twitter">Logout</a>
+          {{ else }}
+          <a href="/auth/twitter/login">Twitter Login</a>
+          {{ end }}
+        </div>
+      </div>
       {{ end }}
       {{ if .GPlusProvider }}
-      <li class="provider">
-        {{ if eq .GPlusUser.Provider "gplus" }}
-        <div class="hello">Hello {{ .GPlusUser.Name }}!</div>
-        <a href="/auth/logout/gplus">Logout</a>
-        {{ else }}
-        <a href="/auth/gplus/login">Google Login</a>
-        {{ end }}
-      </li>
+      <div class="provider provider-gplus">
+        <div>
+          {{ if eq .GPlusUser.Provider "gplus" }}
+          <div class="hello">Hello {{ .GPlusUser.Name }}!</div>
+          <a href="/auth/logout/gplus">Logout</a>
+          {{ else }}
+          <a href="/auth/gplus/login">Google Login</a>
+          {{ end }}
+        </div>
+      </div>
       {{ end }}
-      <li class="provider">
-        <form action="/auth/login" type="GET"><label for="email">Email</label><input name="email" type="email" value="{{ .Email }}"/><button type="submit">Submit</button></form>
-      </li>
-    </ul>
+      <div class="provider provider-email">
+        <div>
+          <form action="/auth/login" type="GET"><label for="email">Email</label><input name="email" type="email" value="{{ .Email }}"/><button type="submit">Submit</button></form>
+        </div>
+      </div>
+    </div>
 
     <pre class="info">
       {{ .Message }}
