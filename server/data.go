@@ -26,6 +26,15 @@ const ErrModelNotFound = DataError("Model Not Found")
 //ErrInvalidRequest is returned when the request or request parameters are invalid
 const ErrInvalidRequest = DataError("Invalid Parameters when calling Data function")
 
+//ErrModelAlreadyExists is returned when a record with the same ID already exists
+const ErrModelAlreadyExists = DataError("a model with the same ID already exists in the database")
+
+//ErrModelNotSaved is returned when the request was valid, but the model was not saved for another reason
+const ErrModelNotSaved = DataError("the model was not saved in the database")
+
+//ErrModelNotGorm is returned when the provided model doesn't impelment gorm.Model
+const ErrModelNotGorm = DataError("the provided model is not based on gorm.Model")
+
 //Data holds methods to get info to/from the db
 type Data struct {
 	sso.UserStorage
@@ -62,17 +71,42 @@ func (d *Data) InitializeDB() error {
 	return nil
 }
 
-/****************************/
-/* SessionStorage functions */
-/****************************/
+/*****************************/
+/* Generic Storage functions */
+/*****************************/
 
-func (d *Data) FindSessionByID(id uint, out *ap.Session) error {
+func (d *Data) FindByID(id uint, out interface{}) error {
 	d.db.Find(out, id)
 	if d.db.NewRecord(out) {
 		return ErrModelNotFound
 	}
 	return nil
 }
+
+func (d *Data) Create(m interface{}) error {
+	model, ok := m.(*gorm.Model)
+	if !ok {
+		return ErrModelNotGorm
+	}
+	dbModel := &gorm.Model{}
+
+	d.db.Find(dbModel, model.ID)
+
+	if !d.db.NewRecord(dbModel) {
+		return ErrModelAlreadyExists
+	}
+
+	d.db.Create(model)
+	if d.db.NewRecord(model) {
+		return ErrModelNotSaved
+	}
+
+	return nil
+}
+
+/****************************/
+/* SessionStorage functions */
+/****************************/
 
 func (d *Data) FindSessionByToken(token string, out *ap.Session) error {
 	if token == "" {
@@ -137,17 +171,6 @@ func (d *Data) UpdateSessionFromRequest(req *ap.Request) error {
 /* UserStorage functions */
 /****************************/
 
-//FindUserByID returns a user object from the user id
-func (d *Data) FindUserByID(id uint, out *sso.User) error {
-
-	d.db.First(out, id)
-
-	if d.db.NewRecord(out) {
-		return ErrModelNotFound
-	}
-	return nil
-}
-
 //FindUserByDevice attempts to find a session. If a session is found, the associated
 //	user is returned. If there isn't a user associated with that session, the user is
 //  created and associated with the session before being returned.
@@ -163,10 +186,10 @@ func (d *Data) FindUserByDevice(mac string, node string, out *sso.User) error {
 		return fmt.Errorf("could not find user with mac: %s, node: %s", mac, node)
 	}
 	if !d.db.NewRecord(s) {
-		d.FindUserByID(s.UserID, out)
+		d.FindByID(s.UserID, out)
 		if d.db.NewRecord(out) {
 			out = &sso.User{}
-			d.db.Create(out)
+			d.Create(out)
 		}
 
 		if d.db.NewRecord(out) {
@@ -189,7 +212,7 @@ func (d *Data) FindUserIDByDevice(token, mac, node string) string { return "" }
 func (d *Data) AddLoginToUser(userID uint, login sso.UserLogin) error {
 	user := &sso.User{}
 
-	if err := d.FindUserByID(userID, user); err != nil {
+	if err := d.FindByID(userID, user); err != nil {
 		return err
 	}
 

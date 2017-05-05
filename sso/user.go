@@ -7,7 +7,7 @@ import (
 
 //UserStorage provides an interface for the data adapter to implement user srorage
 type UserStorage interface {
-	FindUserByID(id uint, out *User) error
+	FindByID(id uint, out interface{}) error
 	FindUserByDevice(mac string, node string, out *User) error
 	FindUserIDByDevice(token, mac, node string) string
 	AddLoginToUser(id uint, login UserLogin) error

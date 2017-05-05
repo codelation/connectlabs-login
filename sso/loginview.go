@@ -14,4 +14,5 @@ type LoginView struct {
 	SubTitle         string
 	Email            string
 	Message          string
+	BackgroundURL    string
 }

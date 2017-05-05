@@ -59,7 +59,7 @@ func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 
 	sessions.UpdateSessionFromRequest(request)
 
-	err = response.Execute(&w)
+	err = response.Execute(w)
 
 	if err != nil {
 		log.Printf("error while handling Accounting Request response: %s\n", err.Error())
@@ -72,6 +72,8 @@ func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 //and generates the Response Authentication token.
 //NOTE: I don't like this method, it will be updated/changed/mamed at some point.
 func GenerateRA(code string, ra string, secret string) (string, error) {
+	log.Printf("Generating new RA, code: %s, ra: %s, secret: %s\n", code, ra, secret)
+
 	var buffer bytes.Buffer
 	var err error
 	hasher := md5.New()

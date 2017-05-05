@@ -37,7 +37,7 @@ type Response struct {
 }
 
 //Execute the APResposne object, and write the response to the io writer
-func (r *Response) Execute(w *http.ResponseWriter) error {
+func (r *Response) Execute(w http.ResponseWriter) error {
 	var err error
 
 	//Pull in our template
@@ -48,7 +48,7 @@ func (r *Response) Execute(w *http.ResponseWriter) error {
 	}
 
 	//Execute the response template, and write to the response
-	err = t.Execute(*w, *r)
+	err = t.Execute(w, *r)
 	if err != nil {
 		return err
 	}
