@@ -34,15 +34,6 @@ func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error finding session: %v", err.Error())
 	}
 
-	//Get the new response authorization
-	response.ResponseAuthorization, err = GenerateRA(response.ResponseCode,
-		request.RequestAuthorization, ap.Secret)
-
-	if err != nil {
-		//nothing will work after this, should we do something here?
-		log.Printf("error occured while generating the response authenticator:\n%s", err.Error())
-	}
-
 	switch request.RequestType {
 	case RequestTypeStatus:
 		//TODO: always reject for now, but eventually this could be used to re-up credentials
@@ -58,6 +49,15 @@ func (ap *AP) HandleAPRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessions.UpdateSessionFromRequest(request)
+
+	//Get the new response authorization
+	response.ResponseAuthorization, err = GenerateRA(response.ResponseCode,
+		request.RequestAuthorization, ap.Secret)
+
+	if err != nil {
+		//nothing will work after this, should we do something here?
+		log.Printf("error occured while generating the response authenticator:\n%s", err.Error())
+	}
 
 	err = response.Execute(w)
 
