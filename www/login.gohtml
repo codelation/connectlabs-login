@@ -102,7 +102,12 @@
       {{ end }}
       <div class="provider provider-email">
         <div>
-          <form action="/auth/login" type="GET"><label for="email">Email</label><input name="email" type="email" value="{{ .Email }}"/><button type="submit">Submit</button></form>
+          <form action="{{ .UserAccountManagementURL }}" type="GET">
+            <input type="hidden" name="mac" value="{{ .MacAddress }}" />
+            <label for="email">Email</label>
+            <input name="email" type="email" value="{{ .Email }}"/>
+            <button type="submit">Submit</button>
+          </form>
         </div>
       </div>
     </div>

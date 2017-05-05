@@ -2,6 +2,7 @@ package sso
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -112,11 +113,15 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 	mac := strings.Replace(req.Form.Get("mac"), "-", ":", -1)
 	ssid := req.Form.Get("ssid")
 	userurl := req.Form.Get("userurl")
+	uamip := req.Form.Get("uamip")
+	uamport := "8085"
 
 	oauth.StoreInSession("node", node, req, res)
 	oauth.StoreInSession("mac", mac, req, res)
 	oauth.StoreInSession("ssid", ssid, req, res)
 	oauth.StoreInSession("userurl", userurl, req, res)
+	oauth.StoreInSession("uamip", userurl, req, res)
+	oauth.StoreInSession("uamport", userurl, req, res)
 
 	log.Println("handling login page")
 
@@ -156,6 +161,8 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 		FacebookProvider: true,
 		GPlusProvider:    true,
 		Email:            dbUser.Email,
+		UserAccountManagementURL: fmt.Sprintf("http://%s:%s/cgi-bin/submit.cgi", uamip, uamport),
+		MacAddress:               mac,
 	}
 
 	if user, err := oauth.CompleteUserAuth(res, req, "facebook"); err == nil {
