@@ -1,7 +1,7 @@
 #!/bin/sh
 
-mac=`echo "$QUERY_STRING" | grep -oE "(^|[?&])mac=[^&]+" | cut -f 2 -d "="`
-session=`echo "$QUERY_STRING" | grep -oE "(^|[?&])session=[^&]+" | cut -f 2 -d "="`
+
+mac=`echo "$QUERY_STRING" | grep -oE "(^|[?&])mac=[^&]+" | cut -f 2 -d "="|awk '{gsub("%3A",":",$0); print $0 }'|awk '{print tolower($0)}'`
 email=`echo "$QUERY_STRING" | grep -oE "(^|[?&])email=[^&]+" | cut -f 2 -d "="`
 response=`udshape -n ssid1 -p login -m ${mac} -U ${email} -P ${session}`
 ip=`cat /var/dhcp.leases | grep -oE "^[0-9]* ${mac} ([^ ]*)"| cut -f 3 -d " "`
