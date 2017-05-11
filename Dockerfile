@@ -7,7 +7,8 @@ ENV APP_NAME=connectlabs-login APP_SRC=github.com/ryanhatfield/connectlabs-login
 
 WORKDIR /opt/build/src
 
-RUN apk --update --no-cache add openssl ca-certificates
+RUN sed -i -e 's/dl-cdn/dl-2/' /etc/apk/repositories && \
+    apk --update --no-cache add openssl ca-certificates
 
 ADD . /opt/build/src/$APP_SRC
 
