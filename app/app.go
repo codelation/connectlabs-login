@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/pat"
 	"github.com/ryanhatfield/connectlabs-login/ap"
+	"github.com/ryanhatfield/connectlabs-login/api"
 	"github.com/ryanhatfield/connectlabs-login/server"
 	"github.com/ryanhatfield/connectlabs-login/sso"
 )
@@ -24,6 +25,7 @@ type App struct {
 	SingleSignOnHandler *sso.SSO
 	router              *pat.Router
 	initialized         bool
+	APIToken            string
 }
 
 //ListenAndServe initializes the server and calls ServeHTTP
@@ -48,6 +50,11 @@ func (a *App) Initialize() error {
 		return nil
 	}
 
+	api.AuthorizeToken = a.APIToken
+	if api.AuthorizeToken == "" {
+		api.AuthorizeToken = "logmein"
+	}
+
 	a.router = pat.New()
 
 	a.Database.Debug = a.Debug
@@ -70,4 +77,5 @@ func (a *App) setRoutes() {
 	a.router.Get("/auth/{provider}/login", a.SingleSignOnHandler.HandleAuthLogin)
 	a.router.Get("/auth/login.html", a.SingleSignOnHandler.HandleLoginPage)
 	a.router.Get("/ap/auth.html", a.AccessPointHandler.HandleAPRequest)
+	a.router.Get("/api/users/{mac}", api.AuthorizeAPI)
 }

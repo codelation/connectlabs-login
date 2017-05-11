@@ -88,16 +88,15 @@ func (d *Data) Create(m interface{}) error {
 	if !ok {
 		return ErrModelNotGorm
 	}
-	dbModel := &gorm.Model{}
 
-	d.db.Find(dbModel, model.ID)
+	d.db.Find(model, model.ID)
 
-	if !d.db.NewRecord(dbModel) {
+	if !d.db.NewRecord(model) {
 		return ErrModelAlreadyExists
 	}
 
-	d.db.Create(model)
-	if d.db.NewRecord(model) {
+	d.db.Create(m)
+	if d.db.NewRecord(m) {
 		return ErrModelNotSaved
 	}
 

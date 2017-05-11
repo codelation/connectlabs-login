@@ -14,16 +14,20 @@ import (
 
 func main() {
 
-	getEnv := func(key, def string) string {
+	getEnv := func(key string) string {
+		return os.Getenv(key)
+	}
+
+	getEnvD := func(key, def string) string {
 		//helper method for getting environment variables with defaults
-		if e := os.Getenv(key); e != "" {
+		if e := getEnv(key); e != "" {
 			return e
 		}
 		return def
 	}
 
 	getEnvInt := func(key string, def int) int {
-		e := getEnv(key, "0")
+		e := getEnvD(key, "0")
 		i, err := strconv.ParseInt(e, 0, 32)
 		if err != nil || i == 0 {
 			return def
@@ -32,7 +36,7 @@ func main() {
 	}
 
 	getEnvBool := func(key string, def bool) bool {
-		e := getEnv(key, "false")
+		e := getEnvD(key, "false")
 		i, err := strconv.ParseBool(e)
 		if err != nil {
 			return def
@@ -45,20 +49,19 @@ func main() {
 	//sso.UserStorage and ap.SessionStorage can be their own interfaces, but all
 	//are implemented in app.Data, so just cast it to the specific interface type
 	database := &server.Data{
-		DatabaseURL:      os.Getenv("DATABASE_URL"),
+		DatabaseURL:      getEnv("DATABASE_URL"),
 		Debug:            debug,
 		MaxDBConnections: getEnvInt("MAX_DATABASE_CONNECTIONS", 20),
-		// Store:            sessions.NewCookieStore([]byte(getEnv("COOKIE_SECRET", "cookie-secret"))),
 	}
 
 	application := app.App{
 		AccessPointHandler: &ap.AP{
-			Secret:   getEnv("SECRET", "default"),
+			Secret:   getEnvD("SECRET", "default"),
 			Sessions: database,
 		},
 		Database: database,
 		Debug:    debug,
-		Port:     getEnv("PORT", "8080"),
+		Port:     getEnvD("PORT", "8080"),
 		SingleSignOnHandler: &sso.SSO{
 			Users: database,
 			Sites: []sso.SiteConfig{
@@ -75,14 +78,15 @@ func main() {
 					Providers: []string{"facebook", "gplus", "twitter", "email"},
 				},
 			},
-			KeyFacebook:    os.Getenv("FACEBOOK_KEY"),
-			SecretFacebook: os.Getenv("FACEBOOK_SECRET"),
-			KeyTwitter:     os.Getenv("TWITTER_KEY"),
-			SecretTwitter:  os.Getenv("TWITTER_SECRET"),
-			KeyGPlus:       os.Getenv("GPLUS_KEY"),
-			SecretGPlus:    os.Getenv("GPLUS_SECRET"),
-			CallbackURL:    os.Getenv("CALLBACK_URL"),
+			KeyFacebook:    getEnv("FACEBOOK_KEY"),
+			SecretFacebook: getEnv("FACEBOOK_SECRET"),
+			KeyTwitter:     getEnv("TWITTER_KEY"),
+			SecretTwitter:  getEnv("TWITTER_SECRET"),
+			KeyGPlus:       getEnv("GPLUS_KEY"),
+			SecretGPlus:    getEnv("GPLUS_SECRET"),
+			CallbackURL:    getEnv("CALLBACK_URL"),
 		},
+		APIToken: getEnv("API_AUTHORIZATION_TOKEN"),
 	}
 
 	if application.Debug {
