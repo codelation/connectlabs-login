@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/ryanhatfield/connectlabs-login/ap"
+	"github.com/ryanhatfield/connectlabs-login/api"
 	"github.com/ryanhatfield/connectlabs-login/app"
 	"github.com/ryanhatfield/connectlabs-login/server"
 	"github.com/ryanhatfield/connectlabs-login/sso"
@@ -59,6 +60,10 @@ func main() {
 			Secret:   getEnvD("SECRET", "default"),
 			Sessions: database,
 		},
+		API: &api.API{
+			AuthorizeToken: getEnv("API_AUTHORIZATION_TOKEN"),
+			Users:          database,
+		},
 		Database: database,
 		Debug:    debug,
 		Port:     getEnvD("PORT", "8080"),
@@ -86,7 +91,6 @@ func main() {
 			SecretGPlus:    getEnv("GPLUS_SECRET"),
 			CallbackURL:    getEnv("CALLBACK_URL"),
 		},
-		APIToken: getEnv("API_AUTHORIZATION_TOKEN"),
 	}
 
 	if application.Debug {

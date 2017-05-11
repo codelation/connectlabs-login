@@ -170,10 +170,48 @@ func (d *Data) UpdateSessionFromRequest(req *ap.Request) error {
 /* UserStorage functions */
 /****************************/
 
-//FindUserByDevice attempts to find a session. If a session is found, the associated
+func (d *Data) FindUserByID(id uint, out *sso.User) error {
+	err := d.FindByID(id, out)
+	if err != nil {
+		return err
+	}
+
+	d.db.Model(out).Association("Sessions").Find(&out.Sessions)
+	d.db.Model(out).Association("Logins").Find(&out.Logins)
+
+	return nil
+
+}
+
+func (d *Data) FindUserByDevice(mac string, out *sso.User) error {
+	ses := &ap.Session{}
+
+	if mac == "" {
+		//validate mac address by parsing
+		return fmt.Errorf("mac address is required and could not be parsed, mac provided: %s", mac)
+	}
+
+	d.db.Where("device = ? AND user_id != 0", mac).Order("expires_at desc").First(ses)
+	if d.db.NewRecord(ses) {
+		return fmt.Errorf("user with specified mac address does not exist, mac: %s", mac)
+	}
+
+	d.db.Find(out, ses.UserID)
+
+	if d.db.NewRecord(out) {
+		return fmt.Errorf("user with specified mac address does not exist, mac: %s", mac)
+	}
+
+	d.db.Model(out).Association("Sessions").Find(&out.Sessions)
+	d.db.Model(out).Association("Logins").Find(&out.Logins)
+
+	return nil
+}
+
+//FindUserByDeviceAndNode attempts to find a session. If a session is found, the associated
 //	user is returned. If there isn't a user associated with that session, the user is
 //  created and associated with the session before being returned.
-func (d *Data) FindUserByDevice(mac string, node string, out *sso.User) error {
+func (d *Data) FindUserByDeviceAndNode(mac string, node string, out *sso.User) error {
 	s := &ap.Session{}
 
 	if mac == "" || node == "" {

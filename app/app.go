@@ -19,13 +19,13 @@ const SessionKey = "connectlabs-login"
 //App holds all the applicatin logic, and the entry point for the server
 type App struct {
 	AccessPointHandler  *ap.AP
+	API                 *api.API
 	Database            *server.Data
 	Debug               bool
 	Port                string
 	SingleSignOnHandler *sso.SSO
 	router              *pat.Router
 	initialized         bool
-	APIToken            string
 }
 
 //ListenAndServe initializes the server and calls ServeHTTP
@@ -50,9 +50,8 @@ func (a *App) Initialize() error {
 		return nil
 	}
 
-	api.AuthorizeToken = a.APIToken
-	if api.AuthorizeToken == "" {
-		api.AuthorizeToken = "logmein"
+	if a.API.AuthorizeToken == "" {
+		a.API.AuthorizeToken = "logmein"
 	}
 
 	a.router = pat.New()
@@ -77,5 +76,6 @@ func (a *App) setRoutes() {
 	a.router.Get("/auth/{provider}/login", a.SingleSignOnHandler.HandleAuthLogin)
 	a.router.Get("/auth/login.html", a.SingleSignOnHandler.HandleLoginPage)
 	a.router.Get("/ap/auth.html", a.AccessPointHandler.HandleAPRequest)
-	a.router.Get("/api/users/{mac}", api.AuthorizeAPI)
+	a.router.Get("/api/users/find/{mac}", a.API.AuthorizeAPI(a.API.GetUserByMAC))
+	a.router.Get("/api/users/{id}", a.API.AuthorizeAPI(a.API.GetUserByID))
 }

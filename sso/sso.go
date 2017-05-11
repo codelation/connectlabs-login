@@ -60,7 +60,7 @@ func (sso *SSO) HandleAuthCallback(res http.ResponseWriter, req *http.Request) {
 	sessionNode, _ := oauth.GetFromSession("node", req)
 	sessionMac, _ := oauth.GetFromSession("mac", req)
 
-	if err = sso.Users.FindUserByDevice(sessionMac, sessionNode, dbUser); err != nil {
+	if err = sso.Users.FindUserByDeviceAndNode(sessionMac, sessionNode, dbUser); err != nil {
 		log.Printf("error getting user by device mac / node: %s\n", err.Error())
 	}
 
@@ -150,7 +150,7 @@ func (sso *SSO) HandleLoginPage(res http.ResponseWriter, req *http.Request) {
 
 	dbUser := &User{}
 
-	if err = sso.Users.FindUserByDevice(mac, node, dbUser); err != nil {
+	if err = sso.Users.FindUserByDeviceAndNode(mac, node, dbUser); err != nil {
 		log.Printf("error getting user by device mac / node: %s\n", err.Error())
 	}
 
