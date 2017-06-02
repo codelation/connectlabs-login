@@ -239,7 +239,7 @@ func (d *Data) FindUserByDeviceAndNode(mac string, node string, out *sso.User) e
 			// Tries to find a user by the session's user id
 			d.FindByID(s.UserID, out)
 
-			log.PrintF("DIFFERENT ID, OUT: %#v\n", out)
+			log.Printf("DIFFERENT ID, OUT: %#v\n", out)
 
 			if d.db.NewRecord(out) {
 				out = &sso.User{}
