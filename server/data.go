@@ -234,7 +234,7 @@ func (d *Data) FindUserByDeviceAndNode(mac string, node string, out *sso.User) e
 		if s.UserID == 0 {
 			out = &sso.User{}
 			errs := d.Create(out)
-			log.Printf("ERRORS: %#v\n", errs)
+			log.Printf("ERRORS (%#v): %#v\n", out, errs)
 		} else {
 
 			// Tries to find a user by the session's user id
