@@ -228,13 +228,18 @@ func (d *Data) FindUserByDeviceAndNode(mac string, node string, out *sso.User) e
 	// Found a session
 	if !d.db.NewRecord(s) {
 
+		log.Printf("User Obj(ID: %#v) (obj: %#v)\n", s.UserID, sso.User{})
+
 		// If the session user id is 0 then it is invalid
 		if s.UserID == 0 {
 			out = &sso.User{}
 			d.Create(out)
 		} else {
+
 			// Tries to find a user by the session's user id
 			d.FindByID(s.UserID, out)
+
+			log.PrintF("DIFFERENT ID, OUT: %#v\n", out)
 
 			if d.db.NewRecord(out) {
 				out = &sso.User{}
