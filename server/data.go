@@ -219,14 +219,27 @@ func (d *Data) FindUserByDeviceAndNode(mac string, node string, out *sso.User) e
 	}
 
 	d.db.Where("node = ? AND device = ?", node, mac).Order("expires_at desc").First(s)
+
+	// Didn't find a session
 	if d.db.NewRecord(s) {
 		return fmt.Errorf("could not find user with mac: %s, node: %s", mac, node)
 	}
+
+	// Found a session
 	if !d.db.NewRecord(s) {
-		d.FindByID(s.UserID, out)
-		if d.db.NewRecord(out) {
+
+		// If the session user id is 0 then it is invalid
+		if s.UserID == 0 {
 			out = &sso.User{}
 			d.Create(out)
+		} else {
+			// Tries to find a user by the session's user id
+			d.FindByID(s.UserID, out)
+
+			if d.db.NewRecord(out) {
+				out = &sso.User{}
+				d.Create(out)
+			}
 		}
 
 		if d.db.NewRecord(out) {
